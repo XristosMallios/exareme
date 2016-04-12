@@ -7,6 +7,7 @@ import madgik.exareme.common.app.engine.AdpDBQueryID;
 import madgik.exareme.common.app.engine.AdpDBQueryListener;
 import madgik.exareme.common.app.engine.AdpDBStatus;
 import madgik.exareme.common.art.entity.EntityName;
+import madgik.exareme.common.schema.PhysicalTable;
 import madgik.exareme.common.schema.QueryScript;
 import madgik.exareme.master.client.AdpDBClient;
 import madgik.exareme.master.client.AdpDBClientProperties;
@@ -23,6 +24,7 @@ import madgik.exareme.master.queryProcessor.graph.ConcreteOperator;
 import madgik.exareme.master.queryProcessor.graph.ExportToDotty;
 import madgik.exareme.master.queryProcessor.graph.Link;
 import madgik.exareme.master.registry.Registry;
+import madgik.exareme.utils.association.Pair;
 import madgik.exareme.worker.art.container.ContainerJobs;
 import madgik.exareme.worker.art.container.ContainerProxy;
 import madgik.exareme.worker.art.executionPlan.parser.expression.Operator;
@@ -293,6 +295,47 @@ public class RmiAdpDBClient implements AdpDBClient {
         AdpDBQueryExecutionPlan plan = optimizer
             .optimize(script, registry, null, queryData, queryId, properties, true  /* schedule */,
                 true  /* validate */);
+        log.trace("Optimized.");
+
+        // execute
+        AdpDBStatus status = executor.executeScript(plan, properties);
+        return new RmiAdpDBClientQueryStatus(queryId, properties, plan, status);
+    }
+
+    @Override public AdpDBClientQueryStatus query(String queryID, String queryScript,
+                                                  HashMap<String, Pair<Integer, String>> hashQueryMap)
+            throws RemoteException {
+
+        // parse
+        AdpDBQueryID queryId = createNewQueryID();
+        QueryScript script = parser.parse(queryScript, registry);
+        log.trace("QueryScript parsed.");
+
+        // optimize
+        AdpDBHistoricalQueryData queryData = null;
+        AdpDBQueryExecutionPlan plan = optimizer
+                .optimize(script, registry, null, queryData, queryId, properties, true  /* schedule */,
+                        true  /* validate */);
+
+//        ArrayList<PhysicalTable> results = plan.getState().results;
+//        int hashID;
+        //Loop on pernament tables
+//        for(PhysicalTable result : results){
+//            System.out.println("name of pernament result "+result.getTable().getName());
+//            hashID = hashIDMap.get(result.getTable().getName());
+//            System.out.println("hashID is "+hashID);
+//            result.getTable().setHashID(hashID);
+//
+//        }
+
+        Collection<PhysicalTable> ptables = plan.getScript().getTables();
+        Pair<Integer, String> sqlInfo;
+        for(PhysicalTable table : ptables){
+            sqlInfo = hashQueryMap.get(table.getTable().getName());
+            table.getTable().setHashID(sqlInfo.getA());
+            table.addPartitionColumn(sqlInfo.getB());
+        }
+
         log.trace("Optimized.");
 
         // execute

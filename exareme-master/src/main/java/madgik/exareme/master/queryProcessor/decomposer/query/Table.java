@@ -105,6 +105,9 @@ public class Table {
         if (this.getAlias() == null) {
             return this.getName().equals(otherT.getName());
         }
+        if (this.getName() == null || otherT.getName() == null) {
+            return this.getAlias().equals(otherT.getAlias());
+        }
         return (this.getName().equals(otherT.getName()) && this.getAlias()
             .equals(otherT.getAlias()));
     }
@@ -112,7 +115,7 @@ public class Table {
     @Override public int hashCode() {
         int hash = 7;
         hash = 89 * hash + Objects.hashCode(this.getAlias());
-        hash = 89 * hash + Objects.hashCode(this.getName());
+//        hash = 89 * hash + Objects.hashCode(this.getName()); //merikes fores einai NULL
         return hash;
     }
     

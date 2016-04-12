@@ -315,6 +315,9 @@ public class RmiAdpDBSelectOptimizer {
                 }
                 queryString.append(", ").append(cName);
             }
+            if(usedColumns.isEmpty()){
+                queryString.append("* ");
+            }
             queryString.append(" from ").append(pTable.getName());
             transferQ.setQuery(queryString.toString());
         } else {

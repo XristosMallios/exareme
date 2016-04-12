@@ -23,7 +23,7 @@ public class SQLQuery {
 	private static final Logger log = Logger.getLogger(SQLQuery.class);
 
 	private List<Output> outputs;
-	private Column partitionColumn;
+	public Column partitionColumn;
 	// public final List<Function> outputFunctions = new ArrayList<>();
 	private List<Table> inputTables;
 	private boolean isNested;
@@ -1771,6 +1771,10 @@ public class SQLQuery {
 		this.outputs.add(new Output(outputName, c));
 
 	}
+
+    public void addOutput(String aliasTableName, String columnName, String alias){
+        this.outputs.add(new Output(alias, new Column(aliasTableName, columnName)));
+    }
 
 	public void removeInfo() {
 		unaryWhereConditions = new ArrayList<UnaryWhereCondition>();

@@ -7,10 +7,7 @@ import madgik.exareme.utils.collections.ReadOnlyViewList;
 import madgik.exareme.utils.embedded.db.TableInfo;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author herald
@@ -22,12 +19,14 @@ public class PhysicalTable implements Serializable {
     private ReadOnlyViewList<Partition> partitions = null;
     private ReadOnlyViewList<Index> indexes = null;
     private Map<String, Index> columnNameIndexMap = null;
+    private List<String> partitionColumns;
 
     public PhysicalTable(Table table) {
         this.table = table;
         this.partitions = new ReadOnlyViewList<Partition>(new ArrayList<Partition>());
         this.indexes = new ReadOnlyViewList<Index>(new ArrayList<Index>());
         this.columnNameIndexMap = new HashMap<String, Index>();
+        partitionColumns = new LinkedList<>();
     }
 
     public PhysicalTable(TableInfo tableInfo) {
@@ -44,6 +43,10 @@ public class PhysicalTable implements Serializable {
 
     public void addPartition(Partition p) {
         this.partitions.getList().add(p);
+    }
+
+    public void addPartitionColumn(String column) {
+        partitionColumns.add(column);
     }
 
     public Partition getPartition(int part) {
@@ -77,5 +80,9 @@ public class PhysicalTable implements Serializable {
 
     public int getNumberOfIndexes() {
         return indexes.getList().size();
+    }
+
+    public List<String> getPartitionColumns() {
+        return partitionColumns;
     }
 }

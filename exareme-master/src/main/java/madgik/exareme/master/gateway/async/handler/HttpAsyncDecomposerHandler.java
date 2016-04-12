@@ -21,6 +21,7 @@ import madgik.exareme.master.queryProcessor.decomposer.query.SQLQueryParser;
 import madgik.exareme.master.queryProcessor.decomposer.query.Table;
 import madgik.exareme.master.queryProcessor.estimator.NodeSelectivityEstimator;
 import madgik.exareme.master.queryProcessor.estimator.db.Schema;
+import madgik.exareme.utils.association.Pair;
 import madgik.exareme.worker.art.registry.ArtRegistryLocator;
 
 import org.apache.http.*;
@@ -450,11 +451,13 @@ public class HttpAsyncDecomposerHandler implements HttpAsyncRequestHandler<HttpR
 								resultTblName = subqueries.get(0).getInputTables().get(0).getAlias();
 							} else {
 								HashMap<String, byte[]> hashIDMap = new HashMap<>();
+                                HashMap<String, Pair<Integer, String>> hashQueryMap = new HashMap<>();
 								for (SQLQuery q : subqueries) {
 									//when using cache
 									//hashIDMap.put(q.getResultTableName(), q.getHashId().asBytes());
 
-									String dSQL = q.toDistSQL();
+                                    hashQueryMap.put(q.getResultTableName(), new Pair(q.getHashId(), q.partitionColumn.toString()));
+                                    String dSQL = q.toDistSQL();
 									decomposedQuery += dSQL + "\n\n";
 									if (!q.isTemporary()) {
 										resultTblName = q.getTemporaryTableName();
@@ -465,8 +468,8 @@ public class HttpAsyncDecomposerHandler implements HttpAsyncRequestHandler<HttpR
 								log.debug("Executing decomposed query ...");
 								//when using cache
 								//AdpDBClientQueryStatus status = dbClient.query("dquery", decomposedQuery, hashIDMap);
-								AdpDBClientQueryStatus status = dbClient.query("dquery", decomposedQuery);
-								while (status.hasFinished() == false && status.hasError() == false) {
+                                AdpDBClientQueryStatus status = dbClient.query("dquery", decomposedQuery, hashQueryMap);
+                                while (status.hasFinished() == false && status.hasError() == false) {
 									if (timeoutMs > 0) {
 										long timePassed = System.currentTimeMillis() - start;
 										if (timePassed > timeoutMs) {

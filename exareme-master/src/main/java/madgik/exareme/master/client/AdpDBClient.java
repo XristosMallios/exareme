@@ -4,9 +4,11 @@
 package madgik.exareme.master.client;
 
 import madgik.exareme.common.app.engine.AdpDBQueryListener;
+import madgik.exareme.utils.association.Pair;
 
 import java.io.InputStream;
 import java.rmi.RemoteException;
+import java.util.HashMap;
 
 
 /**
@@ -29,6 +31,16 @@ public interface AdpDBClient {
      * @throws RemoteException
      */
     AdpDBClientQueryStatus query(String queryID, String queryScript) throws RemoteException;
+
+    /**
+     * @param queryID
+     * @param queryScript
+     * @param  hashQueryID
+     * @return
+     * @throws RemoteException
+     */
+    AdpDBClientQueryStatus query(String queryID, String queryScript, HashMap<String, Pair<Integer, String>> hashQueryID) throws RemoteException;
+
 
     /**
      * @param queryID

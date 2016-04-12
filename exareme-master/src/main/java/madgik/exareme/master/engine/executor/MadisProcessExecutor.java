@@ -26,6 +26,7 @@ import java.rmi.ServerException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author herald
@@ -40,6 +41,7 @@ public class MadisProcessExecutor {
     private long pages = 0;
     private ProcessManager procManager = null;
     private String compresion = AdpDBProperties.getAdpDBProps().getString("db.execute.compresion");
+    private static final Map<String, String> queryMap = new HashMap();
 
     public MadisProcessExecutor(File directory, int page_size_B, int memory_MB,
         ProcessManager procManager) {
@@ -268,8 +270,10 @@ public class MadisProcessExecutor {
             //                 just alter the input table to the output table.
             //                 This is the case in the import.
             String simpleQuery = "select_*_from_" + outputTable;
-            String inputQuery =
-                query.trim().replaceAll("( )+", " ").replaceAll("\n", " ").replaceAll(" ", "_");
+//            String inputQuery =
+//                query.trim().replaceAll("( )+", " ").replaceAll("\n", " ").replaceAll(" ", "_");
+            String inputQuery = query.trim().replaceAll("( )+", " ").replaceAll("\n", " ").replaceAll("\\ +", " ")
+                    .replaceAll("_", "__").replaceAll(" ", "_");
             log.debug("Input Query: '" + inputQuery + "'");
             log.debug("Simple Query: '" + simpleQuery + "'");
 
@@ -293,6 +297,11 @@ public class MadisProcessExecutor {
                     log.debug(stdOutErr.a);
                 }
             } else {
+
+                if (!inputQuery.equals(simpleQuery)) {
+                    queryMap.put(outputTable, inputQuery);
+                }
+
                 // Run query
                 stats = ExecUtils.runQueryOnTable(script, madisMainDB, directory, procManager);
             }
@@ -348,6 +357,7 @@ public class MadisProcessExecutor {
                 throw new RemoteException();
             }
 
+            execResult.getTableInfo().setSqlQuery(queryMap.get(outputTable));
             return execResult;
         } catch (Exception e) {
             throw new ServerException("Cannot execute madis", e);
