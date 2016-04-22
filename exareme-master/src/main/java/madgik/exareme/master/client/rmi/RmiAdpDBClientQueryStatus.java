@@ -117,7 +117,8 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
         if (status.hasError() == false) {
 
             // update registry
-            HashMap<String, List<TableInfo>> resultTablesSQLDef = new HashMap<>();
+            HashMap<String, List<TableInfo>> resultTables = new HashMap<>();
+            HashMap<String, String> sqlQueries = new HashMap<>();
             HashMap<String, List<ExecuteQueryExitMessage>> exitMessageMap = new HashMap<>();
             List<ExecuteQueryExitMessage> queryExitMessageList;
 
@@ -134,23 +135,24 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                     // get
                     if (exitMessage != null) {
 
-                        tables = resultTablesSQLDef.get(exitMessage.outTableInfo.getTableName());
-                        queryExitMessageList = exitMessageMap.get(exitMessage.outTableInfo.getTableName());
                         if (exitMessage.type == AdpDBOperatorType.tableUnionReplicator) {
+
+                            tables = resultTables.get(exitMessage.outTableInfo.getTableName());
+                            queryExitMessageList = exitMessageMap.get(exitMessage.outTableInfo.getTableName());
                             tableSet.add(exitMessage.outTableInfo.getTableName());
-                        }
-                        if (tables == null) {
-                            tables = new LinkedList<TableInfo>();
-                            resultTablesSQLDef.put(exitMessage.outTableInfo.getTableName(), tables);
-                            queryExitMessageList = new LinkedList<ExecuteQueryExitMessage>();
-                            exitMessageMap.put(exitMessage.outTableInfo.getTableName(), queryExitMessageList);
-                        }
 
-                        tables.add(exitMessage.outTableInfo);
-                        queryExitMessageList.add(exitMessage);
+                            if (tables == null) {
+                                tables = new LinkedList<TableInfo>();
+                                resultTables.put(exitMessage.outTableInfo.getTableName(), tables);
+                                queryExitMessageList = new LinkedList<ExecuteQueryExitMessage>();
+                                exitMessageMap.put(exitMessage.outTableInfo.getTableName(), queryExitMessageList);
+                            }
+                            tables.add(exitMessage.outTableInfo);
+                            queryExitMessageList.add(exitMessage);
 
-//                        resultTablesSQLDef.put(exitMessage.outTableInfo.getTableName(),
-//                            exitMessage.outTableInfo.getSQLDefinition());
+                        }else if(exitMessage.type == AdpDBOperatorType.runQuery) {
+                            sqlQueries.put(exitMessage.outTableInfo.getTableName(), exitMessage.outTableInfo.getSqlQuery());
+                        }
                     }
                 }
             }
@@ -165,12 +167,10 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
 
             // Adding result tables, indexes to schema.
 
-            int totalSize;
-            Set<String> pernamentTables = new HashSet<>();
-
             Registry registry = Registry.getInstance(properties.getDatabase());
 
-
+            int totalSize;
+            Set<String> pernamentTables = new HashSet<>();
             for (PhysicalTable resultTable : plan.getResultTables()) {
 
                 //                for (Select selectQuery : plan.getScript().getSelectQueries()) {
@@ -182,7 +182,7 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
 //                    }
 //                }
                 pernamentTables.add(resultTable.getTable().getName());
-                TableInfo tableInfo = resultTablesSQLDef.get(resultTable.getName()).get(0);
+                TableInfo tableInfo = resultTables.get(resultTable.getName()).get(0);
                 totalSize = 0;
                 queryExitMessageList = exitMessageMap.get(resultTable.getName());
                 for (int part = 0; part < resultTable.getPartitions().size(); ++part) {
@@ -196,16 +196,16 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                         }
                     }
                 }
-                resultTable.getTable().setSqlQuery(queryExitMessageList.get(0).outTableInfo.getSqlQuery());
+                resultTable.getTable().setSqlQuery(sqlQueries.get(resultTable.getName()));
                 resultTable.getTable().setSize(totalSize);
 
                 if (resultTable.getTable().hasSQLDefinition() == false) {
-                    if (resultTablesSQLDef.containsKey(resultTable.getName()) == false) {
+                    if (resultTables.containsKey(resultTable.getName()) == false) {
                         throw new SemanticException(
                                 "Table definition not found: " + resultTable.getName());
                     }
                     resultTableName = resultTable.getName();
-                    String sqlDef = resultTablesSQLDef.get(resultTable.getName()).get(0).getSQLDefinition();
+                    String sqlDef = resultTables.get(resultTable.getName()).get(0).getSQLDefinition();
                     resultTable.getTable().setSqlDefinition(sqlDef);
                 }
                 resultTable.getTable().setTemp(false);
@@ -249,7 +249,7 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
 //                            }
 //                        }
 
-                        TableInfo tableInfo = resultTablesSQLDef.get(tableName).get(0);
+                        TableInfo tableInfo = resultTables.get(tableName).get(0);
                         totalSize = 0;
                         int size;
                         queryExitMessageList = exitMessageMap.get(tableName);
@@ -274,7 +274,7 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                                 }
                             }
                         }
-                        resultTable.getTable().setSqlQuery(queryExitMessageList.get(0).outTableInfo.getSqlQuery());
+                        resultTable.getTable().setSqlQuery(sqlQueries.get(queryExitMessageList.get(0).outTableInfo.getTableName()));
                         resultTable.getTable().setSize(totalSize);
                         table.setSize(totalSize);
                         Cache cache = new Cache(properties, Integer.parseInt(AdpDBProperties.getAdpDBProps().getString("db.cacheSize")));
@@ -286,7 +286,7 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                         }
 
                         if (resultTable.getTable().hasSQLDefinition() == false) {
-                            if (resultTablesSQLDef.containsKey(resultTable.getName()) == false) {
+                            if (resultTables.containsKey(resultTable.getName()) == false) {
                                 throw new SemanticException(
                                         "Table definition not found: " + resultTable.getName());
                             }

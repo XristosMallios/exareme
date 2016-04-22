@@ -305,6 +305,9 @@ public class Cache {
 
         Cache cache = new Cache(properties);
         String table = cache.queryHashIDExistance(0, null, 1, 10000);
+        System.out.println("table is "+table);
+        table = cache.queryHashIDExistance(256, null, 3, 10000);
+        System.out.println("table is "+table);
 //
         System.out.println("apo edw ");
         System.out.println(cache.queryExistance("select * from query_lessons1 where query_lessons1.idssss>5"));
