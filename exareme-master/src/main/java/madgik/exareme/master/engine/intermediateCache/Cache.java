@@ -184,7 +184,8 @@ public class Cache {
         for(PhysicalTable table : tables){
             try {
                 sqlQuery = SQLQueryParser.parse(table.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
-                qc.setCachedQuery(sqlQuery);
+                qc.setCachedQuery(sqlQuery, table.getName());
+                System.out.println("no error sto " + table.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
             } catch (Exception e) {
                 System.out.println("error sto " + table.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
             }
@@ -302,11 +303,11 @@ public class Cache {
 //        Cache cache = new Cache(properties, 327680);
 //        cache.updateCache(table, map);
 
-//        Cache cache = new Cache(properties);
-//        String table = cache.queryHashIDExistance(0, null, 1, 10000);
+        Cache cache = new Cache(properties);
+        String table = cache.queryHashIDExistance(0, null, 1, 10000);
 //
-//        System.out.println("apo edw ");
-//        System.out.println(cache.queryExistance("select * from query_lessons1 where query_lessons1.idssss>5"));
+        System.out.println("apo edw ");
+        System.out.println(cache.queryExistance("select * from query_lessons1 where query_lessons1.idssss>5"));
 
     }
 

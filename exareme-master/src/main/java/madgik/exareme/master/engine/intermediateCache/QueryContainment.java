@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class QueryContainment {
 
-    private List<SQLQuery> cachedQuery;
+    private List<Pair<String, SQLQuery>> cachedQuery;
     private SQLQuery demandedQuery;
     private Map<Column, List<NonUnaryWhereCondition>> filterOperandMapInDemandQuery;
     private Map<Column, List<NonUnaryWhereCondition>> joinOperandMapInDemandQuery;
@@ -22,7 +22,7 @@ public class QueryContainment {
     private List<Set<Table>> cachedQueryInputTables;
     private List<Set<String>> cachedSelectOutputs;
     private Set<NonUnaryWhereCondition> appliedDemandJoinConditions;
-    private final String cachedTableName = "cachedTable";
+    private final String cachedTableName = "cachedTableName";
     private final String[] dateFormats = {
             "dd-mm-yyyy HH:mm:ss", "dd-mm-yyyy hh:mm:ss a", "dd/mm/yyyy HH:mm:ss",
             "dd/mm/yyyy hh:mm:ss a", "dd-MMM-yyyy HH:mm:ss", "dd-MMM-yyyy hh:mm:ss a",
@@ -30,7 +30,7 @@ public class QueryContainment {
             "dd-MMM-yyyy", "dd/MMM/yyyy"};
 
 
-    private void initCacheMaps(SQLQuery cachedQuery) {
+    private void initCacheMaps(SQLQuery cachedQuery, String cacheTableName) {
 
         Set<Table> cacheTables = new HashSet<>();
         Set<String> cachedOutputs = new HashSet<>();
@@ -121,7 +121,7 @@ public class QueryContainment {
         cachedSelectOutputs.add(cachedOutputs);
         filterOperandMapInCachedQuery.add(filterMap);
         joinOperandMapInCachedQuery.add(joinMap);
-        this.cachedQuery.add(cachedQuery);
+        this.cachedQuery.add(new Pair(cacheTableName, cachedQuery));
 
     }
 
@@ -193,11 +193,11 @@ public class QueryContainment {
 
     }
 
-    public QueryContainment(SQLQuery cachedQuery, SQLQuery demandedQuery) {
+    public QueryContainment(SQLQuery cachedQuery, String cacheTableName, SQLQuery demandedQuery) {
         this.cachedQuery = new LinkedList<>();
         this.demandedQuery = demandedQuery;
         initDemandMaps();
-        initCacheMaps(cachedQuery);
+        initCacheMaps(cachedQuery, cacheTableName);
     }
 
     public QueryContainment(SQLQuery demandedQuery) {
@@ -209,18 +209,18 @@ public class QueryContainment {
 
     }
 
-    public void setQueries(SQLQuery cachedQuery, SQLQuery demandedQuery) {
+    public void setQueries(SQLQuery cachedQuery, String cacheTableName, SQLQuery demandedQuery) {
         this.cachedQuery = new LinkedList<>();
         this.demandedQuery = demandedQuery;
         initDemandMaps();
-        initCacheMaps(cachedQuery);
+        initCacheMaps(cachedQuery, cacheTableName);
     }
 
-    public void setCachedQuery(SQLQuery cachedQuery) {
+    public void setCachedQuery(SQLQuery cachedQuery, String cacheTableName) {
         if (this.cachedQuery == null) {
             this.cachedQuery = new LinkedList<>();
         }
-        initCacheMaps(cachedQuery);
+        initCacheMaps(cachedQuery, cacheTableName);
     }
 
     public void setDemandedQuery(SQLQuery demandedQuery) {
@@ -569,6 +569,7 @@ public class QueryContainment {
         Map<Column, List<NonUnaryWhereCondition>> cacheJoinMap = joinOperandMapInCachedQuery.get(queryIndex);
         Map<Column, List<NonUnaryWhereCondition>> cacheFilterMap = filterOperandMapInCachedQuery.get(queryIndex);
         Set<Table> cachedTables = cachedQueryInputTables.get(queryIndex);
+        String cacheTable = cachedQuery.get(queryIndex).getVar1();
 
         Set<Table> usedTables = new HashSet<>();
         for (Table table : cachedTables) {
@@ -626,12 +627,13 @@ public class QueryContainment {
                         } else {
 
                             if (leastDistance < 0 || leastDistance > distance) {
-                                tableName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getBaseTable();
+//                                tableName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getBaseTable();
                                 alias = demandCondition.getLeftOp().getAllColumnRefs().get(0).getAlias();
+                                tableName = getBaseTableName(alias, demandedQuery);
                                 columnName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getColumnName();
 
                                 usedTables.add(new Table(tableName, alias));
-                                Column column = new Column(cachedTableName, alias + "_" + columnName, "table" + queryIndex);
+                                Column column = new Column(cachedTableName, alias + "_" + columnName, cacheTable);
 
                                 appliedTransformation.setLeftOp(column);
                                 if (appliedTransformation == null) {
@@ -689,19 +691,21 @@ public class QueryContainment {
                             break;
                         } else {
 
-                            tableName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getBaseTable();
+//                            tableName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getBaseTable();
                             alias = demandCondition.getLeftOp().getAllColumnRefs().get(0).getAlias();
+                            tableName = getBaseTableName(alias, demandedQuery);
                             columnName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getColumnName();
 
-                            Column column = new Column(cachedTableName, alias + "_" + columnName, "table" + queryIndex);
+                            Column column = new Column(cachedTableName, alias + "_" + columnName, cacheTable);
                             appliedTransformation.setLeftOp(column);
                             usedTables.add(new Table(tableName, alias));
 
-                            tableName = demandCondition.getRightOp().getAllColumnRefs().get(0).getBaseTable();
+//                            tableName = demandCondition.getRightOp().getAllColumnRefs().get(0).getBaseTable();
                             alias = demandCondition.getRightOp().getAllColumnRefs().get(0).getAlias();
+                            tableName = getBaseTableName(alias, demandedQuery);
                             columnName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getColumnName();
 
-                            column = new Column(cachedTableName, alias + "_" + columnName, "table" + queryIndex);
+                            column = new Column(cachedTableName, alias + "_" + columnName, cacheTable);
                             appliedTransformation.setRightOp(column);
 
                             usedTables.add(new Table(tableName, alias));
@@ -729,8 +733,9 @@ public class QueryContainment {
         for (Column demandFilterColumn : filterOperandMapInDemandQuery.keySet()) {
             for (NonUnaryWhereCondition demandCondition : filterOperandMapInDemandQuery.get(demandFilterColumn)) {
 
-                tableName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getBaseTable();
+//                tableName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getBaseTable();
                 alias = demandCondition.getLeftOp().getAllColumnRefs().get(0).getAlias();
+                tableName = getBaseTableName(alias, demandedQuery);
                 columnName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getColumnName();
 
                 table = new Table(tableName, alias);
@@ -750,7 +755,7 @@ public class QueryContainment {
                         return null;
                     }
 
-                    Column leftOp = new Column(cachedTableName, alias + "_" + columnName, "table" + queryIndex);
+                    Column leftOp = new Column(cachedTableName, alias + "_" + columnName, cacheTable);
                     NonUnaryWhereCondition newCondition = new NonUnaryWhereCondition(leftOp, demandCondition.getRightOp(),
                             demandCondition.getOperator());
                     sqlQuery.addBinaryWhereCondition(newCondition);
@@ -774,8 +779,9 @@ public class QueryContainment {
             for (NonUnaryWhereCondition demandCondition : joinOperandMapInDemandQuery.get(demandJoinColumn)) {
 
                 if (!appliedDemandJoinConditions.contains(demandCondition)) {
-                    tableName = demandCondition.getRightOp().getAllColumnRefs().get(0).getBaseTable();
+//                    tableName = demandCondition.getRightOp().getAllColumnRefs().get(0).getBaseTable();
                     alias = demandCondition.getRightOp().getAllColumnRefs().get(0).getAlias();
+                    tableName = getBaseTableName(alias, demandedQuery);
                     columnName = demandCondition.getRightOp().getAllColumnRefs().get(0).getColumnName();
                     Column rightOp, leftOp;
                     table = new Table(tableName, alias);
@@ -791,11 +797,12 @@ public class QueryContainment {
                             System.out.println("to join pedio " + alias + "_" + columnName + " dn uparxei sto cached query");
                             return null;
                         }
-                        rightOp = new Column(cachedTableName, alias + "_" + columnName, "table" + queryIndex);
+                        rightOp = new Column(cachedTableName, alias + "_" + columnName, cacheTable);
                     }
 
-                    tableName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getBaseTable();
+//                    tableName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getBaseTable();
                     alias = demandCondition.getLeftOp().getAllColumnRefs().get(0).getAlias();
+                    tableName = getBaseTableName(alias, demandedQuery);
                     columnName = demandCondition.getLeftOp().getAllColumnRefs().get(0).getColumnName();
                     table = new Table(tableName, alias);
 
@@ -810,7 +817,7 @@ public class QueryContainment {
                             System.out.println("to join pedio " + alias + "_" + columnName + " dn uparxei sto cached query");
                             return null;
                         }
-                        leftOp = new Column(cachedTableName, alias + "_" + columnName, "table" + queryIndex);
+                        leftOp = new Column(cachedTableName, alias + "_" + columnName, cacheTable);
                     }
 
                     NonUnaryWhereCondition newCondition = new NonUnaryWhereCondition(leftOp, rightOp, demandCondition.getOperator());
@@ -820,7 +827,7 @@ public class QueryContainment {
             }
         }
 
-        Table cachedTable = new Table("table" + queryIndex, cachedTableName);
+        Table cachedTable = new Table(cacheTable, cachedTableName);
         sqlQuery.addInputTable(cachedTable);
         for (Table addedTable : addedTables) {
             sqlQuery.addInputTable(addedTable);
@@ -850,7 +857,7 @@ public class QueryContainment {
 
             }
         }
-        return sqlQuery.toDistSQL();
+        return sqlQuery.toSQL();
     }
 
     public String containQuery() {
@@ -859,9 +866,7 @@ public class QueryContainment {
 
         for (int i = 0; i < cachedQuery.size(); ++i) {
             result = contain(i);
-            if (i == 1) {
-                System.out.println("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii");
-            }
+
             if (result != null) {
                 return result;
             }
@@ -882,5 +887,15 @@ public class QueryContainment {
         demandedQueryInputTables.clear();
         cachedQueryInputTables.clear();
         appliedDemandJoinConditions.clear();
+    }
+
+    private String getBaseTableName(String tableAlias, SQLQuery sqlQuery){
+
+        for(Table table : sqlQuery.getInputTables()){
+            if(table.getAlias().equals(tableAlias)){
+                return table.getlocalName();
+            }
+        }
+        return null;
     }
 }

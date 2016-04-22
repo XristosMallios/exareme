@@ -258,7 +258,7 @@ public class QueryContainmentClient {
         query = "SELECT * FROM A a WHERE a.id >= 2";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT * FROM A a WHERE a.id=4 AND a.id=7";
         System.out.println("query "+query);
@@ -274,7 +274,7 @@ public class QueryContainmentClient {
         query = "SELECT a.x AS a_x, a.y AS a_y, a.z AS a_z FROM A a, B b WHERE a.x>=1 AND a.x<=5 AND b.x=5  ";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT * FROM A a, B b WHERE a.x>=2 AND a.x<=5 AND b.x=5 AND a.y>=3 AND a.y<=7 AND a.z = 8";
         System.out.println("query "+query);
@@ -290,7 +290,7 @@ public class QueryContainmentClient {
         query = "SELECT a.id AS a_id, b.id AS b_id, a.x AS a_x, b.y AS b_y FROM A a, B b WHERE a.id=b.id AND a.id>=5";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.id AS a_id, b.id AS b_id, c.id AS c_id FROM A a, B b, C c " +
                 "WHERE a.x>=1 AND b.y=5 AND a.id>=6 AND a.id=b.id AND a.id=c.id AND c.k <=9 and c.k > 2";
@@ -307,7 +307,7 @@ public class QueryContainmentClient {
         query = "SELECT a.id AS a_id, b.id AS b_id, a.x AS a_x, b.y AS b_y FROM A a, B b WHERE a.id=b.id AND a.id>=5";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.id AS a_id, b.id AS b_id, c.id AS c_id FROM A a, B b, C c, D d " +
                 "WHERE a.x>=1 AND b.y=5 AND a.id>=6 AND a.id=b.id AND a.id=c.id AND c.k <=9 and c.k > 2 " +
@@ -326,7 +326,7 @@ public class QueryContainmentClient {
         query = "SELECT * FROM A a WHERE a.id >= 2";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT * FROM A a WHERE a.id>=4 AND a.id>=3";
         System.out.println("query "+query);
@@ -343,7 +343,7 @@ public class QueryContainmentClient {
         query = "SELECT a.id as a_id FROM A a WHERE a.id >= 2";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.id as a_id, a.x as a_x FROM A a WHERE a.id>=4";
         System.out.println("query "+query);
@@ -360,7 +360,7 @@ public class QueryContainmentClient {
         query = "SELECT a.id as a_id FROM A a WHERE a.id >= 2";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.id as a_id FROM A a WHERE a.id>=4 and a.x>=3";
         System.out.println("query "+query);
@@ -377,7 +377,7 @@ public class QueryContainmentClient {
         query = "SELECT a.id as a_id FROM A a WHERE a.id >= 2";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.id as a_id FROM A a, B b WHERE a.id>=4 and a.x=b.x";
         System.out.println("query "+query);
@@ -394,7 +394,7 @@ public class QueryContainmentClient {
         query = "SELECT a.name as a_name FROM A a WHERE a.name >= 'a'";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.name as a_name FROM A a WHERE a.name >= 'b'";
         System.out.println("query "+query);
@@ -411,7 +411,7 @@ public class QueryContainmentClient {
         query = "SELECT a.name as a_name FROM A a WHERE a.name = 'b'";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.name as a_name FROM A a WHERE a.name = 'b'";
         System.out.println("query "+query);
@@ -427,7 +427,7 @@ public class QueryContainmentClient {
         query = "SELECT a.date as a_date FROM A a WHERE a.date >= '03-Aug-2006 18:55:30'";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.date as a_date FROM A a WHERE a.date >= '03-Aug-2006 18:55:30'";
         System.out.println("query "+query);
@@ -444,7 +444,7 @@ public class QueryContainmentClient {
         query = "SELECT a.date as a_date FROM A a WHERE a.date >= '03-Aug-2006 18:55:30'";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.date as a_date FROM A a WHERE a.date >= '02-Aug-2016 18:55:30'";
         System.out.println("query "+query);
@@ -460,7 +460,7 @@ public class QueryContainmentClient {
         query = "SELECT a.date as a_date FROM A a WHERE a.date >= '03-Aug-2006 18:55:30'";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.date as a_date FROM A a WHERE a.date >= '02-Aug-2006 18:55:30'";
         System.out.println("query "+query);
@@ -476,7 +476,7 @@ public class QueryContainmentClient {
         query = "SELECT a.date as a_date FROM A a WHERE a.date >= '03-Aug-2006 18:55:30'";
         System.out.println("query "+query);
         sqlQuery1 = SQLQueryParser.parse(query);
-        qc.setCachedQuery(sqlQuery1);
+        qc.setCachedQuery(sqlQuery1, "myTable");
 
         query = "SELECT a.date as a_date FROM A a WHERE a.date >= '04-Aug-2006 18:55:30'";
         System.out.println("query "+query);
