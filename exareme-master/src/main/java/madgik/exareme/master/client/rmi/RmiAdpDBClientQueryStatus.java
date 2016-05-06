@@ -12,6 +12,8 @@ import madgik.exareme.master.client.AdpDBClientQueryStatus;
 import madgik.exareme.master.engine.AdpDBQueryExecutionPlan;
 import madgik.exareme.master.engine.intermediateCache.Cache;
 import madgik.exareme.master.engine.parser.SemanticException;
+import madgik.exareme.master.queryProcessor.decomposer.query.SQLQuery;
+import madgik.exareme.master.queryProcessor.decomposer.query.SQLQueryParser;
 import madgik.exareme.master.registry.Registry;
 import madgik.exareme.utils.chart.TimeFormat;
 import madgik.exareme.utils.chart.TimeUnit;
@@ -150,7 +152,7 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                             tables.add(exitMessage.outTableInfo);
                             queryExitMessageList.add(exitMessage);
 
-                        }else if(exitMessage.type == AdpDBOperatorType.runQuery) {
+                        } else if (exitMessage.type == AdpDBOperatorType.runQuery) {
                             sqlQueries.put(exitMessage.outTableInfo.getTableName(), exitMessage.outTableInfo.getSqlQuery());
                         }
                     }
@@ -169,8 +171,12 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
 
             Registry registry = Registry.getInstance(properties.getDatabase());
 
+            SQLQuery sqlQuery;
+            Set<String> usedCachedTables = new HashSet<>();
             int totalSize;
             Set<String> pernamentTables = new HashSet<>();
+            Cache cache = new Cache(properties);
+            //loop sta pernament tables
             for (PhysicalTable resultTable : plan.getResultTables()) {
 
                 //                for (Select selectQuery : plan.getScript().getSelectQueries()) {
@@ -210,14 +216,27 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                 }
                 resultTable.getTable().setTemp(false);
                 registry.addPhysicalTable(resultTable);
-                Cache cache = new Cache(properties);
-                cache.unpinTable(resultTable.getName());
+                cache.unpinTable(resultTable.getName());    //paizei na mn exei noima edw mias kai anaferete se pernament table. Sto shmeio auto prepei apla na mpei gia ta from tables
+
+
+                try {
+                    sqlQuery = SQLQueryParser.parse(resultTable.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
+
+//                    List<Table> usedTables = new ArrayList<>(sqlQuery.getInputTables().size());
+                    for (madgik.exareme.master.queryProcessor.decomposer.query.Table usedTable : sqlQuery.getInputTables()) {
+                        usedCachedTables.add(usedTable.getName());
+                    }
+//                    cache.updateCacheForTableUse(usedTables);
+                } catch (Exception e) {
+                }
             }
 
 
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             java.util.Date dateobj = new Date();
             if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+
+                cache = new Cache(properties, Integer.parseInt(AdpDBProperties.getAdpDBProps().getString("db.cacheSize")));
 
                 Table table;
                 Partition partition;
@@ -277,7 +296,6 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                         resultTable.getTable().setSqlQuery(sqlQueries.get(queryExitMessageList.get(0).outTableInfo.getTableName()));
                         resultTable.getTable().setSize(totalSize);
                         table.setSize(totalSize);
-                        Cache cache = new Cache(properties, Integer.parseInt(AdpDBProperties.getAdpDBProps().getString("db.cacheSize")));
                         try {
 //                            System.out.println("map " + map);
                             cache.updateCache(table, map);
@@ -293,22 +311,41 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                             resultTable.getTable().setSqlDefinition(tableInfo.getSQLDefinition());
                         }
                         registry.addPhysicalTable(resultTable);
+
+                        try {
+                            sqlQuery = SQLQueryParser.parse(resultTable.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
+
+//                            List<Table> usedTables = new ArrayList<>(sqlQuery.getInputTables().size());
+                            for (madgik.exareme.master.queryProcessor.decomposer.query.Table usedTable : sqlQuery.getInputTables()) {
+                                usedCachedTables.add(usedTable.getName());
+                            }
+//                            cache.updateCacheForTableUse(usedTables);
+                        } catch (Exception e) {
+                        }
+
                     }
                 }
-
-
-                //arxi
-//                if (resultTable.getTable().hasSQLDefinition() == false) {
-//                    if (resultTablesSQLDef.containsKey(resultTable.getName()) == false) {
-//                        throw new SemanticException(
-//                            "Table definition not found: " + resultTable.getName());
-//                    }
-//                    resultTableName = resultTable.getName();
-//                    String sqlDef = resultTablesSQLDef.get(resultTable.getName());
-//                    resultTable.getTable().setSqlDefinition(sqlDef);
-//                }
-//                registry.addPhysicalTable(resultTable);
             }
+
+            System.out.println("stagee1");
+            for(String name : tableSet){
+                System.out.println("uparxei sto set to "+name);
+            }
+
+            System.out.println("Stage22");
+            for(String name : pernamentTables){
+                System.out.println("uparxei sto set to "+name);
+            }
+            System.out.println("telos stage");
+
+            List<Table> usedTables = new ArrayList<>(usedCachedTables.size());
+            for(String cachedTableName : usedCachedTables){
+                if(!tableSet.contains(cachedTableName) && !pernamentTables.contains(cachedTableName)) {
+                    System.out.println("tha kanw update to "+cachedTableName);
+                    usedTables.add(new Table(cachedTableName));
+                }
+            }
+            cache.updateCacheForTableUse(usedTables);
 
             for (Index index : plan.getBuildIndexes()) {
                 registry.addIndex(index);

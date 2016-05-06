@@ -246,6 +246,22 @@ public class Registry {
 
     }
 
+    public void updateCacheForTableUse(List<Table> tables){
+
+        String psString = "UPDATE sql SET last_access=?, num_of_access=num_of_access+1 " +
+                "WHERE table_name=?";
+        for(Table table : tables){
+
+            try (PreparedStatement ps = regConn.prepareStatement(psString)) {
+                ps.setString(2, table.getName());
+                ps.setString(1, madgik.exareme.master.engine.remoteQuery.impl.utility.Date.getCurrentDateTime());
+                ps.executeUpdate();
+            } catch (SQLException ex) {
+                log.error(ex.getMessage(), ex);
+            }
+        }
+    }
+
     public Map<String, Integer> getWorkersSize() {
 
         Map<String, Integer> sizeMap = new HashMap<>();

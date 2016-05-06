@@ -42,7 +42,6 @@ public class MadisProcessExecutor {
     private long pages = 0;
     private ProcessManager procManager = null;
     private String compresion = AdpDBProperties.getAdpDBProps().getString("db.execute.compresion");
-//    private static final Map<String, String> queryMap = new HashMap();
 
     public MadisProcessExecutor(File directory, int page_size_B, int memory_MB,
         ProcessManager procManager) {
@@ -298,10 +297,6 @@ public class MadisProcessExecutor {
                     log.debug(stdOutErr.a);
                 }
             } else {
-
-//                if(state.getExitMessage().type == AdpDBOperatorType.runQuery){
-//                    queryMap.put(outputTable, inputQuery);
-//                }
                 // Run query
                 stats = ExecUtils.runQueryOnTable(script, madisMainDB, directory, procManager);
             }
@@ -357,7 +352,6 @@ public class MadisProcessExecutor {
                 throw new RemoteException();
             }
 
-//            execResult.getTableInfo().setSqlQuery(queryMap.get(outputTable));
             execResult.getTableInfo().setSqlQuery(inputQuery);
             return execResult;
         } catch (Exception e) {

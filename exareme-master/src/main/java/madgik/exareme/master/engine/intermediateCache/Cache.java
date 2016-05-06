@@ -30,7 +30,7 @@ public class Cache {
         this.totalSize = 0;
     }
 
-    public Cache(AdpDBClientProperties properties, int totalSize){
+    public Cache(AdpDBClientProperties properties, int totalSize) {
         this.properties = properties;
         this.totalSize = totalSize;
     }
@@ -40,10 +40,10 @@ public class Cache {
 
         for (String location : map1.keySet()) {
 
-            System.out.println("1: "+map1.get(location));
-            System.out.println("2: "+map2.get(location));
-            System.out.println("3: "+totalSize);
-            System.out.println("location "+location);
+            System.out.println("1: " + map1.get(location));
+            System.out.println("2: " + map2.get(location));
+            System.out.println("3: " + totalSize);
+            System.out.println("location " + location);
             if (map1.get(location) + map2.get(location) > totalSize) {
                 return false;
             }
@@ -77,7 +77,7 @@ public class Cache {
 
             if (computeBenefit) {
                 for (Table table : tableInfos) {
-                    if(table.getPin() == 0) {
+                    if (table.getPin() == 0) {
                         table.setBenefit(table.getNumOfAccess() / (Date.getDifferenceInSec(table.getLastAccess(), true) * table.getSize()));
                         if (tree.containsKey(table.getBenefit())) {
                             tableList = tree.get(table.getBenefit());
@@ -92,9 +92,9 @@ public class Cache {
                 computeBenefit = false;
             }
 
-            if(tree.isEmpty()){
+            if (tree.isEmpty()) {
                 //delete to new table
-                System.out.println("tpt dn einai unpinned epomenws dn tha mpei to "+newTable.getName());
+                System.out.println("tpt dn einai unpinned epomenws dn tha mpei to " + newTable.getName());
                 lock.unlock();
                 return;
             }
@@ -116,19 +116,19 @@ public class Cache {
 
             Integer size;
             Map<String, Integer> querySizePerLocation = sizePerQuery.get(currentTable.getName());
-            for(String location : querySizePerLocation.keySet()){
+            for (String location : querySizePerLocation.keySet()) {
 
                 size = totalSizePerWorker.get(location);
-                size-=querySizePerLocation.get(location);
+                size -= querySizePerLocation.get(location);
                 totalSizePerWorker.put(location, size);
             }
         }
 
         for (String tableName : evictedTables) {
             //delete to table
-            System.out.println("tha ginei delete to "+tableName);
+            System.out.println("tha ginei delete to " + tableName);
         }
-        System.out.println("mpike to "+newTable.getName());
+        System.out.println("mpike to " + newTable.getName());
         lock.unlock();
         totalSizePerWorker = null;
         tableInfos = null;
@@ -167,21 +167,31 @@ public class Cache {
         lock.unlock();
     }
 
-    public String queryExistance(String query)  {
+    public void updateCacheForTableUse(List<Table> tables) {
+
+        Registry registry = Registry.getInstance(properties.getDatabase());
+
+        lock.lock();
+        registry.updateCacheForTableUse(tables);
+        lock.unlock();
+    }
+
+    public String queryExistance(String query) {
 
         QueryContainment qc;
         SQLQuery sqlQuery = null;
-        try{
+        try {
             sqlQuery = SQLQueryParser.parse(query);
             qc = new QueryContainment();
             qc.setDemandedQuery(sqlQuery);
-        } catch(Exception e){
+        } catch (Exception e) {
+            System.out.println("mpikaaa me to " + query);
             return null;
         }
 
         Registry registry = Registry.getInstance(properties.getDatabase());
         Collection<PhysicalTable> tables = registry.getPhysicalTables();
-        for(PhysicalTable table : tables){
+        for (PhysicalTable table : tables) {
             try {
                 sqlQuery = SQLQueryParser.parse(table.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
                 qc.setCachedQuery(sqlQuery, table.getName());
@@ -210,9 +220,9 @@ public class Cache {
             String partColumn = registry.getPartitionColumn(tablename);
             if (partColumn != null && partitionColumn.equals(partColumn)) {
                 return tablename;
-            } else if(partColumn == null && partitionColumn == null){
+            } else if (partColumn == null && partitionColumn == null) {
                 return tablename;
-            } else{
+            } else {
                 return null;
             }
         }
@@ -234,7 +244,7 @@ public class Cache {
             String partColumn = registry.getPartitionColumn(tablename);
             if (partColumn != null && partitionColumn.equals(partColumn)) {
                 return tablename;
-            } else if(partColumn == null && partitionColumn == null){
+            } else if (partColumn == null && partitionColumn == null) {
                 return tablename;
             } else {
                 return null;
@@ -305,12 +315,14 @@ public class Cache {
 
         Cache cache = new Cache(properties);
         String table = cache.queryHashIDExistance(0, null, 1, 10000);
-        System.out.println("table is "+table);
+        System.out.println("table is " + table);
         table = cache.queryHashIDExistance(256, null, 3, 10000);
-        System.out.println("table is "+table);
+        System.out.println("table is " + table);
 //
         System.out.println("apo edw ");
         System.out.println(cache.queryExistance("select * from query_lessons1 where query_lessons1.idssss>5"));
+        System.out.println("edw 2");
+        System.out.println(cache.queryExistance("select * from l2 where l2.id>5"));
 
     }
 
