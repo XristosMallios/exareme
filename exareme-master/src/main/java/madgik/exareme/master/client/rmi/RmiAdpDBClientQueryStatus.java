@@ -327,21 +327,9 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                 }
             }
 
-            System.out.println("stagee1");
-            for(String name : tableSet){
-                System.out.println("uparxei sto set to "+name);
-            }
-
-            System.out.println("Stage22");
-            for(String name : pernamentTables){
-                System.out.println("uparxei sto set to "+name);
-            }
-            System.out.println("telos stage");
-
             List<Table> usedTables = new ArrayList<>(usedCachedTables.size());
             for(String cachedTableName : usedCachedTables){
                 if(!tableSet.contains(cachedTableName) && !pernamentTables.contains(cachedTableName)) {
-                    System.out.println("tha kanw update to "+cachedTableName);
                     usedTables.add(new Table(cachedTableName));
                 }
             }

@@ -202,7 +202,6 @@ public class Cache {
         }
 
         return qc.containQuery();
-
     }
 
     public String queryHashIDExistance(int hashID, String partitionColumn, int numOfPartitions) {
