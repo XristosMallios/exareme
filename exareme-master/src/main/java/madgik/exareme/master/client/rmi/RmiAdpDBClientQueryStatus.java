@@ -123,6 +123,7 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
             HashMap<String, String> sqlQueries = new HashMap<>();
             HashMap<String, List<ExecuteQueryExitMessage>> exitMessageMap = new HashMap<>();
             List<ExecuteQueryExitMessage> queryExitMessageList;
+            HashMap<String, String> resultTablesSQLDef = new HashMap<>();
 
             List<TableInfo> tables;
             Set<String> tableSet = new HashSet<>();
@@ -137,23 +138,28 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                     // get
                     if (exitMessage != null) {
 
-                        if (exitMessage.type == AdpDBOperatorType.tableUnionReplicator) {
+                        if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+                            if (exitMessage.type == AdpDBOperatorType.tableUnionReplicator) {
 
-                            tables = resultTables.get(exitMessage.outTableInfo.getTableName());
-                            queryExitMessageList = exitMessageMap.get(exitMessage.outTableInfo.getTableName());
-                            tableSet.add(exitMessage.outTableInfo.getTableName());
+                                tables = resultTables.get(exitMessage.outTableInfo.getTableName());
+                                queryExitMessageList = exitMessageMap.get(exitMessage.outTableInfo.getTableName());
+                                tableSet.add(exitMessage.outTableInfo.getTableName());
 
-                            if (tables == null) {
-                                tables = new LinkedList<TableInfo>();
-                                resultTables.put(exitMessage.outTableInfo.getTableName(), tables);
-                                queryExitMessageList = new LinkedList<ExecuteQueryExitMessage>();
-                                exitMessageMap.put(exitMessage.outTableInfo.getTableName(), queryExitMessageList);
+                                if (tables == null) {
+                                    tables = new LinkedList<TableInfo>();
+                                    resultTables.put(exitMessage.outTableInfo.getTableName(), tables);
+                                    queryExitMessageList = new LinkedList<ExecuteQueryExitMessage>();
+                                    exitMessageMap.put(exitMessage.outTableInfo.getTableName(), queryExitMessageList);
+                                }
+                                tables.add(exitMessage.outTableInfo);
+                                queryExitMessageList.add(exitMessage);
+
+                            } else if (exitMessage.type == AdpDBOperatorType.runQuery) {
+                                sqlQueries.put(exitMessage.outTableInfo.getTableName(), exitMessage.outTableInfo.getSqlQuery());
                             }
-                            tables.add(exitMessage.outTableInfo);
-                            queryExitMessageList.add(exitMessage);
-
-                        } else if (exitMessage.type == AdpDBOperatorType.runQuery) {
-                            sqlQueries.put(exitMessage.outTableInfo.getTableName(), exitMessage.outTableInfo.getSqlQuery());
+                        } else {
+                            resultTablesSQLDef.put(exitMessage.outTableInfo.getTableName(),
+                                    exitMessage.outTableInfo.getSQLDefinition());
                         }
                     }
                 }
@@ -179,62 +185,69 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
             //loop sta pernament tables
             for (PhysicalTable resultTable : plan.getResultTables()) {
 
-                //                for (Select selectQuery : plan.getScript().getSelectQueries()) {
-//                    if (selectQuery.getParsedSqlQuery().getResultTable().equals(resultTable.getName())) {
-//                        for (String column : selectQuery.getParsedSqlQuery().getPartitionColumns()) {
-//                            resultTable.addPartitionColumn(column);
-//                        }
-//                        break;
-//                    }
-//                }
-                pernamentTables.add(resultTable.getTable().getName());
-                TableInfo tableInfo = resultTables.get(resultTable.getName()).get(0);
-                totalSize = 0;
-                queryExitMessageList = exitMessageMap.get(resultTable.getName());
-                for (int part = 0; part < resultTable.getPartitions().size(); ++part) {
-//          System.out.println("~pnum " + resultTable.getPartitions().get(part).getpNum());
-                    for (ExecuteQueryExitMessage message : queryExitMessageList) {
-                        if (message.serialNumber == resultTable.getPartitions().get(part).getpNum()) {
+                if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
 
-                            resultTable.getPartition(part).setSize(message.outTableInfo.getSizeInBytes());
-                            totalSize += message.outTableInfo.getSizeInBytes();
-                            break;
+                    pernamentTables.add(resultTable.getTable().getName());
+                    TableInfo tableInfo = resultTables.get(resultTable.getName()).get(0);
+                    totalSize = 0;
+                    queryExitMessageList = exitMessageMap.get(resultTable.getName());
+                    for (int part = 0; part < resultTable.getPartitions().size(); ++part) {
+//          System.out.println("~pnum " + resultTable.getPartitions().get(part).getpNum());
+                        for (ExecuteQueryExitMessage message : queryExitMessageList) {
+                            if (message.serialNumber == resultTable.getPartitions().get(part).getpNum()) {
+
+                                resultTable.getPartition(part).setSize(message.outTableInfo.getSizeInBytes());
+                                totalSize += message.outTableInfo.getSizeInBytes();
+                                break;
+                            }
                         }
                     }
-                }
-                resultTable.getTable().setSqlQuery(sqlQueries.get(resultTable.getName()));
-                resultTable.getTable().setSize(totalSize);
+                    resultTable.getTable().setSqlQuery(sqlQueries.get(resultTable.getName()));
+                    resultTable.getTable().setSize(totalSize);
 
-                if (resultTable.getTable().hasSQLDefinition() == false) {
-                    if (resultTables.containsKey(resultTable.getName()) == false) {
-                        throw new SemanticException(
-                                "Table definition not found: " + resultTable.getName());
+                    if (resultTable.getTable().hasSQLDefinition() == false) {
+                        if (resultTables.containsKey(resultTable.getName()) == false) {
+                            throw new SemanticException(
+                                    "Table definition not found: " + resultTable.getName());
+                        }
+                        resultTableName = resultTable.getName();
+                        String sqlDef = resultTables.get(resultTable.getName()).get(0).getSQLDefinition();
+                        resultTable.getTable().setSqlDefinition(sqlDef);
                     }
-                    resultTableName = resultTable.getName();
-                    String sqlDef = resultTables.get(resultTable.getName()).get(0).getSQLDefinition();
-                    resultTable.getTable().setSqlDefinition(sqlDef);
-                }
-                resultTable.getTable().setTemp(false);
-                registry.addPhysicalTable(resultTable);
-                cache.unpinTable(resultTable.getName());    //paizei na mn exei noima edw mias kai anaferete se pernament table. Sto shmeio auto prepei apla na mpei gia ta from tables
+                    resultTable.getTable().setTemp(false);
+                    registry.addPhysicalTable(resultTable);
+                    cache.unpinTable(resultTable.getName());    //paizei na mn exei noima edw mias kai anaferete se pernament table. Sto shmeio auto prepei apla na mpei gia ta from tables
 
 
-                try {
-                    sqlQuery = SQLQueryParser.parse(resultTable.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
+                    try {
+                        sqlQuery = SQLQueryParser.parse(resultTable.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
 
 //                    List<Table> usedTables = new ArrayList<>(sqlQuery.getInputTables().size());
-                    for (madgik.exareme.master.queryProcessor.decomposer.query.Table usedTable : sqlQuery.getInputTables()) {
-                        usedCachedTables.add(usedTable.getName());
-                    }
+                        for (madgik.exareme.master.queryProcessor.decomposer.query.Table usedTable : sqlQuery.getInputTables()) {
+                            usedCachedTables.add(usedTable.getName());
+                        }
 //                    cache.updateCacheForTableUse(usedTables);
-                } catch (Exception e) {
+                    } catch (Exception e) {
+                    }
+                } else {
+                    if (resultTable.getTable().hasSQLDefinition() == false) {
+                        if (resultTablesSQLDef.containsKey(resultTable.getName()) == false) {
+                            throw new SemanticException(
+                                    "Table definition not found: " + resultTable.getName());
+                        }
+                        resultTableName = resultTable.getName();
+                        String sqlDef = resultTablesSQLDef.get(resultTable.getName());
+                        resultTable.getTable().setSqlDefinition(sqlDef);
+                    }
+                    registry.addPhysicalTable(resultTable);
                 }
             }
 
 
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            java.util.Date dateobj = new Date();
             if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                java.util.Date dateobj = new Date();
 
                 cache = new Cache(properties, Integer.parseInt(AdpDBProperties.getAdpDBProps().getString("db.cacheSize")));
 
@@ -315,7 +328,6 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                         try {
                             sqlQuery = SQLQueryParser.parse(resultTable.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
 
-//                            List<Table> usedTables = new ArrayList<>(sqlQuery.getInputTables().size());
                             for (madgik.exareme.master.queryProcessor.decomposer.query.Table usedTable : sqlQuery.getInputTables()) {
                                 usedCachedTables.add(usedTable.getName());
                             }
@@ -325,15 +337,16 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
 
                     }
                 }
-            }
 
-            List<Table> usedTables = new ArrayList<>(usedCachedTables.size());
-            for(String cachedTableName : usedCachedTables){
-                if(!tableSet.contains(cachedTableName) && !pernamentTables.contains(cachedTableName)) {
-                    usedTables.add(new Table(cachedTableName));
+                List<Table> usedTables = new ArrayList<>(usedCachedTables.size());
+                for (String cachedTableName : usedCachedTables) {
+                    if (!tableSet.contains(cachedTableName) && !pernamentTables.contains(cachedTableName)) {
+                        usedTables.add(new Table(cachedTableName));
+                    }
                 }
+                cache.updateCacheForTableUse(usedTables);
+
             }
-            cache.updateCacheForTableUse(usedTables);
 
             for (Index index : plan.getBuildIndexes()) {
                 registry.addIndex(index);

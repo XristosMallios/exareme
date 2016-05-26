@@ -273,7 +273,7 @@ public class MadisProcessExecutor {
 //            String inputQuery =
 //                query.trim().replaceAll("( )+", " ").replaceAll("\n", " ").replaceAll(" ", "_");
             String inputQuery = query.trim().replaceAll("( )+", " ").replaceAll("\n", " ").replaceAll("\\ +", " ")
-                    .replaceAll("_", "__").replaceAll(" ", "_");
+                        .replaceAll("_", "__").replaceAll(" ", "_");
             log.debug("Input Query: '" + inputQuery + "'");
             log.debug("Simple Query: '" + simpleQuery + "'");
 
@@ -352,7 +352,9 @@ public class MadisProcessExecutor {
                 throw new RemoteException();
             }
 
-            execResult.getTableInfo().setSqlQuery(inputQuery);
+            if(AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+                execResult.getTableInfo().setSqlQuery(inputQuery);
+            }
             return execResult;
         } catch (Exception e) {
             throw new ServerException("Cannot execute madis", e);
