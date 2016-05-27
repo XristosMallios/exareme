@@ -55,7 +55,8 @@ public class RmiAdpDBOptimizer implements AdpDBOptimizer {
     static void postProcessGraph(InputData input, StateData state, AdpDBClientProperties props)
         throws SemanticException {
 
-        if(AdpDBProperties.getAdpDBProps().getString("db.cache").equals("false")) {
+        if(!props.isCachedEnable()){
+//        if(AdpDBProperties.getAdpDBProps().getString("db.cache").equals("false")) {
 
             // Remove the replicator operators if they are not needed
             for (ConcreteOperator cop : state.graph.getOperators()) {

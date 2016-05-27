@@ -24,6 +24,7 @@ public class AdpDBSelectOperator implements Serializable {
     private int totalOutputs = 0;
     // <table, <part, count>>
     private HashMap<String, HashMap<Integer, Integer>> outputs = null;
+    private boolean cache = false;
 
     public AdpDBSelectOperator(AdpDBOperatorType t, Select q, int serialNumber) {
         this.type = t;
@@ -31,6 +32,15 @@ public class AdpDBSelectOperator implements Serializable {
         this.serialNumber = serialNumber;
         this.inputs = new HashMap<String, HashMap<Integer, Integer>>();
         this.outputs = new HashMap<String, HashMap<Integer, Integer>>();
+    }
+
+    public AdpDBSelectOperator(AdpDBOperatorType t, Select q, int serialNumber, boolean cache) {
+        this.type = t;
+        this.query = q;
+        this.serialNumber = serialNumber;
+        this.inputs = new HashMap<String, HashMap<Integer, Integer>>();
+        this.outputs = new HashMap<String, HashMap<Integer, Integer>>();
+        this.cache = cache;
     }
 
     public static BitSet findCommonPartitions(AdpDBSelectOperator from, AdpDBSelectOperator to,
@@ -139,6 +149,8 @@ public class AdpDBSelectOperator implements Serializable {
             }
         }
     }
+
+    public boolean useCache(){ return cache; }
 
     public Collection<String> getInputTables() {
         return inputs.keySet();

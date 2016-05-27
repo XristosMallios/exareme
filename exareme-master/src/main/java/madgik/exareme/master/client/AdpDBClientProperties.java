@@ -27,8 +27,29 @@ public class AdpDBClientProperties implements Serializable {
     private int maxNumberOfContainers;
     private int statisticsUpdateSEC;
 
+    private boolean cache = false;
+
     private SLA sla;
 
+
+    public AdpDBClientProperties(String database, String username, String password, boolean cache, boolean tree,
+                                 boolean useHistory, boolean validate, int maxNumberOfContainers, int statisticsUpdateSEC,
+                                 SLA sla) {
+
+        this.database = database;
+        this.username = username;
+        this.password = password;
+
+        this.cache = cache;
+        this.tree = tree;
+        this.useHistory = useHistory;
+        this.validate = validate;
+
+        this.maxNumberOfContainers = maxNumberOfContainers;
+        this.statisticsUpdateSEC = statisticsUpdateSEC;
+
+        this.sla = sla;
+    }
 
     public AdpDBClientProperties(String database, String username, String password, boolean tree,
         boolean useHistory, boolean validate, int maxNumberOfContainers, int statisticsUpdateSEC,
@@ -51,6 +72,10 @@ public class AdpDBClientProperties implements Serializable {
         this(database, "", "", false, false, true, -1, 10, null);
     }
 
+    public AdpDBClientProperties(String database, boolean cache) {
+        this(database, "", "", cache, false, false, true, -1, 10, null);
+    }
+
     public AdpDBClientProperties(String database, String username, String password) {
         this(database, username, password, false, false, true, -1, 10, null);
     }
@@ -61,6 +86,12 @@ public class AdpDBClientProperties implements Serializable {
             statisticsUpdateSEC, null);
     }
 
+    public AdpDBClientProperties(String database, String username, String password, boolean cache,
+                                 boolean useHistory, boolean validate, int maxNumberOfContainers, int statisticsUpdateSEC) {
+        this(database, username, password, cache, false, useHistory, validate, maxNumberOfContainers,
+                statisticsUpdateSEC, null);
+    }
+
     public String getDatabase() {
         return database;
     }
@@ -68,6 +99,8 @@ public class AdpDBClientProperties implements Serializable {
     public String getUsername() {
         return username;
     }
+
+    public boolean isCachedEnable() { return cache; }
 
     public boolean isTreeEnabled() {
         return tree;

@@ -9,8 +9,10 @@ import madgik.exareme.common.schema.Index;
 import madgik.exareme.common.schema.Partition;
 import madgik.exareme.common.schema.PhysicalTable;
 import madgik.exareme.common.schema.Table;
+import madgik.exareme.master.client.AdpDBClientProperties;
 import madgik.exareme.master.engine.remoteQuery.impl.utility.*;
 import madgik.exareme.master.engine.remoteQuery.impl.utility.Date;
+import madgik.exareme.utils.properties.AdpDBProperties;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -29,6 +31,7 @@ public class Registry {
     private static List<Registry> registryObjects = new ArrayList<>();
     private Connection regConn = null;
     private String database = null;
+    private AdpDBClientProperties properties = null;
 
     private Registry(String path) {
         new File(path).mkdirs();
@@ -63,6 +66,22 @@ public class Registry {
         } catch (SQLException | ClassNotFoundException e) {
             log.error(e.getMessage(), e);
         }
+    }
+
+    public synchronized static Registry getInstance(AdpDBClientProperties properties) {
+        String db = properties.getDatabase() + "/registry.db";
+        for (Registry registry : registryObjects) {
+            if (registry.getDatabase().equals(db)) {
+                registry.setProperties(properties);
+                return registry;
+            }
+        }
+
+        Registry registry = new Registry(properties.getDatabase());
+        registry.setProperties(properties);
+        registryObjects.add(registry);
+
+        return registry;
     }
 
     public synchronized static Registry getInstance(String path) {
@@ -127,16 +146,27 @@ public class Registry {
             insertSqlStatement.setString(1, table.getTable().getName());
             insertSqlStatement.setString(2, table.getTable().getSqlDefinition());
             insertSqlStatement.setInt(3, table.getTable().getSize());
-            if (table.getTable().isTemp())
-                insertSqlStatement.setInt(4, 1);
-            else
+//            if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+            if(properties != null && properties.isCachedEnable()){
+                if (table.getTable().isTemp())
+                    insertSqlStatement.setInt(4, 1);
+                else
+                    insertSqlStatement.setInt(4, 0);
+                insertSqlStatement.setString(5, table.getTable().getSqlQuery());
+                insertSqlStatement.setInt(6, table.getTable().getHashID());
+                insertSqlStatement.setInt(7, 0);
+                insertSqlStatement.setInt(8, 1);
+                insertSqlStatement.setString(9, madgik.exareme.master.engine.remoteQuery.impl.utility.Date.getCurrentDateTime());
+                insertSqlStatement.setString(10, madgik.exareme.master.engine.remoteQuery.impl.utility.Date.getCurrentDateTime());
+            } else {
                 insertSqlStatement.setInt(4, 0);
-            insertSqlStatement.setString(5, table.getTable().getSqlQuery());
-            insertSqlStatement.setInt(6, table.getTable().getHashID());
-            insertSqlStatement.setInt(7, 0);
-            insertSqlStatement.setInt(8, 1);
-            insertSqlStatement.setString(9, madgik.exareme.master.engine.remoteQuery.impl.utility.Date.getCurrentDateTime());
-            insertSqlStatement.setString(10, madgik.exareme.master.engine.remoteQuery.impl.utility.Date.getCurrentDateTime());
+                insertSqlStatement.setString(5, null);
+                insertSqlStatement.setInt(6, 0);
+                insertSqlStatement.setInt(7, 0);
+                insertSqlStatement.setInt(8, 0);
+                insertSqlStatement.setString(9, null);
+                insertSqlStatement.setString(10, null);
+            }
             insertSqlStatement.execute();
 
             for (String partitionColumn : table.getPartitionColumns()) {
@@ -246,11 +276,11 @@ public class Registry {
 
     }
 
-    public void updateCacheForTableUse(List<Table> tables){
+    public void updateCacheForTableUse(List<Table> tables) {
 
         String psString = "UPDATE sql SET last_access=?, num_of_access=num_of_access+1 " +
                 "WHERE table_name=?";
-        for(Table table : tables){
+        for (Table table : tables) {
 
             try (PreparedStatement ps = regConn.prepareStatement(psString)) {
                 ps.setString(2, table.getName());
@@ -604,6 +634,10 @@ public class Registry {
 
     public void setMappings(String mappings) {
         // throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public void setProperties(AdpDBClientProperties properties){
+        this.properties = properties;
     }
 
     public List<Object[]> getMetadata() {

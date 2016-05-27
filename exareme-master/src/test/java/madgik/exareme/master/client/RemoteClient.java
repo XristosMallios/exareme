@@ -30,6 +30,7 @@ public class RemoteClient {
     private String[] load_script1;
     private String[] load_script2;
     private String[] query_script;
+    private boolean cache = false;
 
     private class RunnableAdpDBClient implements Runnable {
         private final int id;
@@ -155,7 +156,7 @@ public class RemoteClient {
         log.debug("---- TEST ----");
 
 //        AdpDBClientProperties properties = new AdpDBClientProperties(dbPathName);
-        AdpDBClientProperties properties = new AdpDBClientProperties(dbPathName, "", "", false, false, -1, 10);
+        AdpDBClientProperties properties = new AdpDBClientProperties(dbPathName, "", "", cache, false, false, -1, 10);
 
         ExaremeCluster miniCluster =
                 ExaremeClusterFactory.createMiniCluster(registryPort, dtPort, nworkers);

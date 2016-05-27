@@ -138,7 +138,8 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                     // get
                     if (exitMessage != null) {
 
-                        if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+//                        if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+                        if (properties.isCachedEnable()) {
                             if (exitMessage.type == AdpDBOperatorType.tableUnionReplicator) {
 
                                 tables = resultTables.get(exitMessage.outTableInfo.getTableName());
@@ -175,7 +176,7 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
 
             // Adding result tables, indexes to schema.
 
-            Registry registry = Registry.getInstance(properties.getDatabase());
+            Registry registry = Registry.getInstance(properties);
 
             SQLQuery sqlQuery;
             Set<String> usedCachedTables = new HashSet<>();
@@ -185,7 +186,8 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
             //loop sta pernament tables
             for (PhysicalTable resultTable : plan.getResultTables()) {
 
-                if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+                if (properties.isCachedEnable()) {
+//                if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
 
                     pernamentTables.add(resultTable.getTable().getName());
                     TableInfo tableInfo = resultTables.get(resultTable.getName()).get(0);
@@ -244,7 +246,8 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
             }
 
 
-            if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+//            if (AdpDBProperties.getAdpDBProps().getString("db.cache").equals("true")) {
+            if (properties.isCachedEnable()) {
 
                 DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 java.util.Date dateobj = new Date();
