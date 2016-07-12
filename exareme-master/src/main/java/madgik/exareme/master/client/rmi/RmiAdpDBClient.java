@@ -303,32 +303,32 @@ public class RmiAdpDBClient implements AdpDBClient {
         // execute
         AdpDBStatus status = executor.executeScript(plan, properties);
 
-        System.out.println("Arxiiiiiiiiiiii");
-        InputStream dataStream = readTable("query_lessons1");
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(dataStream))) {
-            String data;
-
-            boolean schema = true;
-            while ((data = reader.readLine()) != null) {
-                if(schema){
-                    schema = false;
-                    continue;
-                }
-                System.out.println("neo record");
-                data = data.substring(1, data.length()-1);
-                String[] datas = data.split(",");
-                for(String d : datas){
-                    if(d.startsWith("\"")){
-                        d = d.substring(1, d.length()-1);
-                    }
-                    System.out.println("- "+d);
-                }
-            }
-        }catch(IOException ex){
-            System.out.println("mlkia "+ex.getMessage());
-        }
-        System.out.println("telossss");
+//        System.out.println("Arxiiiiiiiiiiii");
+//        InputStream dataStream = readTable("query_lessons1");
+//        try (BufferedReader reader = new BufferedReader(
+//                new InputStreamReader(dataStream))) {
+//            String data;
+//
+//            boolean schema = true;
+//            while ((data = reader.readLine()) != null) {
+//                if(schema){
+//                    schema = false;
+//                    continue;
+//                }
+//                System.out.println("neo record");
+//                data = data.substring(1, data.length()-1);
+//                String[] datas = data.split(",");
+//                for(String d : datas){
+//                    if(d.startsWith("\"")){
+//                        d = d.substring(1, d.length()-1);
+//                    }
+//                    System.out.println("- "+d);
+//                }
+//            }
+//        }catch(IOException ex){
+//            System.out.println("mlkia "+ex.getMessage());
+//        }
+//        System.out.println("telossss");
 
         return new RmiAdpDBClientQueryStatus(queryId, properties, plan, status);
     }
