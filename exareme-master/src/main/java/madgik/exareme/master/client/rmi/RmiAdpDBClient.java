@@ -296,8 +296,8 @@ public class RmiAdpDBClient implements AdpDBClient {
         // optimize
         AdpDBHistoricalQueryData queryData = null;
         AdpDBQueryExecutionPlan plan = optimizer
-            .optimize(script, registry, null, queryData, queryId, properties, true  /* schedule */,
-                true  /* validate */);
+                .optimize(script, registry, null, queryData, queryId, properties, true  /* schedule */,
+                        true  /* validate */);
         log.trace("Optimized.");
 
         // execute
@@ -330,7 +330,12 @@ public class RmiAdpDBClient implements AdpDBClient {
 //        }
 //        System.out.println("telossss");
 
-        return new RmiAdpDBClientQueryStatus(queryId, properties, plan, status);
+
+        if (!properties.isCachedEnable()) {
+            return new RmiAdpDBClientQueryStatus(queryId, properties, plan, status);
+        }else{
+            return new RmiAdpDBClientQueryStatus(queryId, properties, plan, status, this);
+        }
     }
 
     @Override public AdpDBClientQueryStatus query(String queryID, String queryScript,

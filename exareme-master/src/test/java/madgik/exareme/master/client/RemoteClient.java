@@ -30,7 +30,7 @@ public class RemoteClient {
     private String[] load_script1;
     private String[] load_script2;
     private String[] query_script;
-    private boolean cache = true;
+    private boolean cache = false;
 
     private class RunnableAdpDBClient implements Runnable {
         private final int id;

@@ -54,6 +54,7 @@ public class AdpDBParser {
         id = 0;
         try {
             ByteArrayInputStream stream = new ByteArrayInputStream(queryScript.getBytes());
+            System.out.println("eisodos "+stream);
             AdpDBQueryParser parser = new AdpDBQueryParser(stream);
             sqlScript = parser.parseScript();
         } catch (ParseException e) {

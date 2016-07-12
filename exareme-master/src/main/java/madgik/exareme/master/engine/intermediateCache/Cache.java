@@ -9,6 +9,7 @@ import madgik.exareme.master.queryProcessor.decomposer.query.SQLQueryParser;
 import madgik.exareme.master.registry.Registry;
 import madgik.exareme.utils.association.Triple;
 
+import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -39,7 +40,7 @@ public class Cache {
 
     private boolean validateDiskSpace(Map<String, Integer> map1, Map<String, Integer> map2) {
 
-        for (String location : map1.keySet()) {
+        for (String location : map2.keySet()) {
 
             Integer size1 = map1.get(location);
             Integer size2 = map2.get(location);
@@ -47,7 +48,10 @@ public class Cache {
             System.out.println("2: " + size2);
             System.out.println("3: " + totalSize);
             System.out.println("location " + location);
-            if (size2 != null && (map1.get(location) + map2.get(location) > totalSize)) {
+            if (size1 != null && (map1.get(location) + map2.get(location) > totalSize)) {
+                System.out.println("Einai false to flag");
+                return false;
+            }else if(size1 == null && map2.get(location) > totalSize){
                 System.out.println("Einai false to flag");
                 return false;
             }
@@ -56,7 +60,7 @@ public class Cache {
         return true;
     }
 
-    public void updateCache(Table newTable, Map<String, Integer> sizeMap) throws ParseException {
+    public List<String> updateCache(Table newTable, Map<String, Integer> sizeMap) throws ParseException {
 
         lock.lock();
         System.out.println("arxiiii");
@@ -78,13 +82,10 @@ public class Cache {
         double benefit, newQueryBenefit = newTable.getBenefit();
         Table currentTable;
 
-        System.out.println("os1");
         while (!validateDiskSpace(totalSizePerWorker, sizeMap)) {
 
-            System.out.println("os2");
 
             if (computeBenefit) {
-                System.out.println("os3");
                 for (Table table : tableInfos) {
                     if (table.getPin() == 0) {
                         table.setBenefit(table.getNumOfAccess() / (Date.getDifferenceInSec(table.getLastAccess(), true) * table.getSize()));
@@ -100,27 +101,30 @@ public class Cache {
                 }
                 computeBenefit = false;
             }
-            System.out.println("os4");
 
             if (tree.isEmpty()) {
                 //delete to new table
                 System.out.println("tpt dn einai unpinned epomenws dn tha mpei to " + newTable.getName());
+                List<String> table = new ArrayList<>(1);
+                table.add(newTable.getName());
                 lock.unlock();
-                return;
+                return table;
             }
 
             benefit = tree.firstKey();
             if (newQueryBenefit < benefit) {
                 //delete to new table
-                System.out.println("to benefit einai mikrotero ");
+                System.out.println("to benefit einai mikrotero gia to "+newTable.getName());
+
+                List<String> table = new ArrayList<>(1);
+                table.add(newTable.getName());
                 lock.unlock();
-                return;
+                return table;
             }
 
             tableList = tree.get(benefit);
             currentTable = tableList.remove(0);
             if (tableList.isEmpty()) {
-                System.out.println("os5");
                 tree.remove(benefit);
             }
             evictedTables.add(currentTable.getName());
@@ -135,7 +139,6 @@ public class Cache {
             }
         }
 
-        System.out.println("os6");
         for (String tableName : evictedTables) {
             //delete to table
             System.out.println("tha ginei delete to " + tableName);
@@ -147,6 +150,8 @@ public class Cache {
         sizePerQuery = null;
         tree = null;
         System.out.println("telosssss");
+
+        return evictedTables;
     }
 
     public boolean pinTables(List<String> tables) {
@@ -217,17 +222,17 @@ public class Cache {
     }
 
     //a)tableName, b)partitionColumn, c)numOfPartitions
-    public Triple<String, String, Integer> queryHashIDExistance(int hashID){
+    public Triple<String, String, Integer> queryHashIDExistance(int hashID) {
 
         Registry registry = Registry.getInstance(properties.getDatabase());
         return registry.containsHashIDInfo(hashID);
     }
 
     //a)tableName, b)partitionColumn, c)numOfPartitions
-    public Triple<String, String, Integer> queryHashIDExistance(int hashID, long validDuration){
+    public Triple<String, String, Integer> queryHashIDExistance(int hashID, long validDuration) {
 
         Registry registry = Registry.getInstance(properties.getDatabase());
-        return  registry.containsHashIDInfo(hashID, validDuration);
+        return registry.containsHashIDInfo(hashID, validDuration);
     }
 
     public String queryHashIDExistance(int hashID, String partitionColumn, int numOfPartitions) {
@@ -351,8 +356,8 @@ public class Cache {
 
 //        Triple<String, String, Integer> info = cache.queryHashIDExistance(56, 1000000);
         Triple<String, String, Integer> info = cache.queryHashIDExistance(56);
-        if(info != null)
-            System.out.println("info is "+info.getA()+" | "+info.getB()+" || "+info.getC());
+        if (info != null)
+            System.out.println("info is " + info.getA() + " | " + info.getB() + " || " + info.getC());
         else
             System.out.println("info is null");
 
