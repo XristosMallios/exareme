@@ -24,19 +24,20 @@ public class SinlgePlanDFLGenerator {
 	private Memo memo;
 	private Map<HashCode, madgik.exareme.common.schema.Table> registry;
 	private NamesToAliases n2a;
-	private final boolean useCache = AdpDBProperties.getAdpDBProps()
-			.getBoolean("db.cache");
+    private boolean useCache;
 
 	private static final org.apache.log4j.Logger log = org.apache.log4j.Logger
 			.getLogger(SinlgePlanDFLGenerator.class);
 
-	SinlgePlanDFLGenerator(Node n, int partNo, Memo m,
-			Map<HashCode, madgik.exareme.common.schema.Table> r) {
-		this.root = n;
-		this.partitionNo = partNo;
-		this.memo = m;
-		this.registry = r;
-	}
+
+    SinlgePlanDFLGenerator(Node n, int partNo, Memo m,
+                           Map<HashCode, madgik.exareme.common.schema.Table> r, boolean useCache) {
+        this.root = n;
+        this.partitionNo = partNo;
+        this.memo = m;
+        this.registry = r;
+        this.useCache = useCache;
+    }
 
 	public ResultList generate() {
 		ResultList qs = new ResultList();

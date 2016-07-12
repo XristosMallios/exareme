@@ -51,6 +51,8 @@ import java.util.*;
  */
 public class HttpAsyncDecomposerHandler implements HttpAsyncRequestHandler<HttpRequest> {
 
+    private static boolean useCache = true;
+
 	private static final Logger log = Logger.getLogger(HttpAsyncDecomposerHandler.class);
 	private static final AdpDBManager manager = AdpDBManagerLocator.getDBManager();
 	private static NamesToAliases n2a=new NamesToAliases();
@@ -431,7 +433,7 @@ public class HttpAsyncDecomposerHandler implements HttpAsyncRequestHandler<HttpR
 						try {
 							log.debug("Parsing SQL Query ...");
 							squery = SQLQueryParser.parse(query);
-							QueryDecomposer d = new QueryDecomposer(squery, path, workers, nse);
+							QueryDecomposer d = new QueryDecomposer(squery, path, workers, nse, useCache);
 							n2a=DBInfoReaderDB.readAliases(path);
 							d.setN2a(n2a);
 							log.debug("n2a:"+n2a.toString());
@@ -444,7 +446,7 @@ public class HttpAsyncDecomposerHandler implements HttpAsyncRequestHandler<HttpR
 							squery=null;
 							d=null;
 							nse=null;
-							AdpDBClientProperties props = new AdpDBClientProperties(dbname, "", "", false, false, false,
+							AdpDBClientProperties props = new AdpDBClientProperties(dbname, "", "", useCache, false, false, false,
 									-1, 10, null);
 							AdpDBClient dbClient = AdpDBClientFactory.createDBClient(manager, props);
 							if (subqueries.size() == 1 && subqueries.get(0).existsInCache()) {

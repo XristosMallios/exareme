@@ -57,10 +57,17 @@ public class QueryDecomposer {
     private boolean importExternal;
     //private Registry registry;
     private Map<HashCode, madgik.exareme.common.schema.Table> registry;
-    private final boolean useCache=AdpDBProperties.getAdpDBProps().getBoolean("db.cache");
+    private boolean useCache;
 
-    public QueryDecomposer(SQLQuery initial) throws ClassNotFoundException {
+    public QueryDecomposer(SQLQuery initial, boolean useCache) throws ClassNotFoundException {
         this(initial, ".", 1, null);
+        this.useCache = useCache;
+    }
+
+    public QueryDecomposer(SQLQuery initial, String database, int noOfPartitions,
+                           NodeSelectivityEstimator nse, boolean useCache) {
+        this(initial, database, noOfPartitions, nse);
+        this.useCache = useCache;
     }
 
     public QueryDecomposer(SQLQuery initial, String database, int noOfPartitions,
@@ -281,7 +288,7 @@ public class QueryDecomposer {
 		//
 		// Plan best = findBestPlan(root, cost, memo, new HashSet<Node>(), cel);
 		// System.out.println(best.getPath().toString());
-		SinlgePlanDFLGenerator dsql = new SinlgePlanDFLGenerator(root, noOfparts, memo, registry);
+		SinlgePlanDFLGenerator dsql = new SinlgePlanDFLGenerator(root, noOfparts, memo, registry, useCache);
 		dsql.setN2a(n2a);
 		return (List<SQLQuery>) dsql.generate();
 		// return null;

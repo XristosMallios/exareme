@@ -7,6 +7,7 @@ import madgik.exareme.master.engine.remoteQuery.impl.utility.Date;
 import madgik.exareme.master.queryProcessor.decomposer.query.SQLQuery;
 import madgik.exareme.master.queryProcessor.decomposer.query.SQLQueryParser;
 import madgik.exareme.master.registry.Registry;
+import madgik.exareme.utils.association.Triple;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -40,14 +41,18 @@ public class Cache {
 
         for (String location : map1.keySet()) {
 
-            System.out.println("1: " + map1.get(location));
-            System.out.println("2: " + map2.get(location));
+            Integer size1 = map1.get(location);
+            Integer size2 = map2.get(location);
+            System.out.println("1: " + size1);
+            System.out.println("2: " + size2);
             System.out.println("3: " + totalSize);
             System.out.println("location " + location);
-            if (map1.get(location) + map2.get(location) > totalSize) {
+            if (size2 != null && (map1.get(location) + map2.get(location) > totalSize)) {
+                System.out.println("Einai false to flag");
                 return false;
             }
         }
+        System.out.println("Einai true to flag");
         return true;
     }
 
@@ -73,9 +78,13 @@ public class Cache {
         double benefit, newQueryBenefit = newTable.getBenefit();
         Table currentTable;
 
+        System.out.println("os1");
         while (!validateDiskSpace(totalSizePerWorker, sizeMap)) {
 
+            System.out.println("os2");
+
             if (computeBenefit) {
+                System.out.println("os3");
                 for (Table table : tableInfos) {
                     if (table.getPin() == 0) {
                         table.setBenefit(table.getNumOfAccess() / (Date.getDifferenceInSec(table.getLastAccess(), true) * table.getSize()));
@@ -91,6 +100,7 @@ public class Cache {
                 }
                 computeBenefit = false;
             }
+            System.out.println("os4");
 
             if (tree.isEmpty()) {
                 //delete to new table
@@ -110,6 +120,7 @@ public class Cache {
             tableList = tree.get(benefit);
             currentTable = tableList.remove(0);
             if (tableList.isEmpty()) {
+                System.out.println("os5");
                 tree.remove(benefit);
             }
             evictedTables.add(currentTable.getName());
@@ -124,6 +135,7 @@ public class Cache {
             }
         }
 
+        System.out.println("os6");
         for (String tableName : evictedTables) {
             //delete to table
             System.out.println("tha ginei delete to " + tableName);
@@ -202,6 +214,20 @@ public class Cache {
         }
 
         return qc.containQuery();
+    }
+
+    //a)tableName, b)partitionColumn, c)numOfPartitions
+    public Triple<String, String, Integer> queryHashIDExistance(int hashID){
+
+        Registry registry = Registry.getInstance(properties.getDatabase());
+        return registry.containsHashIDInfo(hashID);
+    }
+
+    //a)tableName, b)partitionColumn, c)numOfPartitions
+    public Triple<String, String, Integer> queryHashIDExistance(int hashID, long validDuration){
+
+        Registry registry = Registry.getInstance(properties.getDatabase());
+        return  registry.containsHashIDInfo(hashID, validDuration);
     }
 
     public String queryHashIDExistance(int hashID, String partitionColumn, int numOfPartitions) {
@@ -318,10 +344,17 @@ public class Cache {
         table = cache.queryHashIDExistance(256, null, 3, 10000);
         System.out.println("table is " + table);
 //
-        System.out.println("apo edw ");
-        System.out.println(cache.queryExistance("select * from query_lessons1 where query_lessons1.idssss>5"));
-        System.out.println("edw 2");
-        System.out.println(cache.queryExistance("select * from l2 where l2.id>5"));
+//        System.out.println("apo edw ");
+//        System.out.println(cache.queryExistance("select * from query_lessons1 where query_lessons1.idssss>5"));
+//        System.out.println("edw 2");
+//        System.out.println(cache.queryExistance("select * from l2 where l2.id>5"));
+
+//        Triple<String, String, Integer> info = cache.queryHashIDExistance(56, 1000000);
+        Triple<String, String, Integer> info = cache.queryHashIDExistance(56);
+        if(info != null)
+            System.out.println("info is "+info.getA()+" | "+info.getB()+" || "+info.getC());
+        else
+            System.out.println("info is null");
 
     }
 

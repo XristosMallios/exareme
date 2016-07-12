@@ -110,6 +110,7 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
         status.stopExecution();
     }
 
+
     @Override
     public void registerListener(AdpDBQueryListener listener) throws RemoteException {
         status.registerListener(listener);
@@ -224,11 +225,11 @@ public class RmiAdpDBClientQueryStatus implements AdpDBClientQueryStatus {
                     try {
                         sqlQuery = SQLQueryParser.parse(resultTable.getTable().getSqlQuery().replaceAll("_", " ").replaceAll("\\ {2,}", "_"));
 
-//                    List<Table> usedTables = new ArrayList<>(sqlQuery.getInputTables().size());
+                    List<Table> usedTables = new ArrayList<>(sqlQuery.getInputTables().size());
                         for (madgik.exareme.master.queryProcessor.decomposer.query.Table usedTable : sqlQuery.getInputTables()) {
                             usedCachedTables.add(usedTable.getName());
                         }
-//                    cache.updateCacheForTableUse(usedTables);
+                    cache.updateCacheForTableUse(usedTables);
                     } catch (Exception e) {
                     }
                 } else {

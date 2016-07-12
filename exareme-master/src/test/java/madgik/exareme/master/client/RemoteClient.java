@@ -30,7 +30,7 @@ public class RemoteClient {
     private String[] load_script1;
     private String[] load_script2;
     private String[] query_script;
-    private boolean cache = false;
+    private boolean cache = true;
 
     private class RunnableAdpDBClient implements Runnable {
         private final int id;
@@ -163,6 +163,7 @@ public class RemoteClient {
         log.debug("Mini cluster created.");
 
         miniCluster.start();
+
         log.debug("Mini cluster started.");
 
         ExecutorService executorService = Executors.newFixedThreadPool(nclients);

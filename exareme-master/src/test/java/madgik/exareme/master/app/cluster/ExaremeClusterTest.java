@@ -28,25 +28,27 @@ public class ExaremeClusterTest {
         log.info("Cluster started.");
         log.info("IsUp : " + cluster.isUp());
 
-        AdpDBClientProperties clientProperties = new AdpDBClientProperties("/tmp/demo-db");
+//        AdpDBClientProperties clientProperties = new AdpDBClientProperties("/tmp/demo-db");
+        AdpDBClientProperties clientProperties = new AdpDBClientProperties("/home/christos/database");
         AdpDBClient dbClient = cluster.getExaremeClusterClient(clientProperties);
         log.info("Client created");
 
-        String tableName = "emp_parted_" + String.valueOf(System.currentTimeMillis());
-        File loadFile =
-            new File(ExaremeCluster.class.getResource("load_emp_template.sql").getFile());
-        String queryScript = String
-            .format(FileUtils.readFileToString(loadFile), tableName, String.valueOf(nworkers + 1),
-                loadFile.getParentFile().getAbsolutePath() + "/emp.tsv");
-        log.info("Query script loaded.");
+//        String tableName = "emp_parted_" + String.valueOf(System.currentTimeMillis());
+//        File loadFile =
+//            new File(ExaremeCluster.class.getResource("load_emp_template.sql").getFile());
+//        String queryScript = String
+//            .format(FileUtils.readFileToString(loadFile), tableName, String.valueOf(nworkers + 1),
+//                loadFile.getParentFile().getAbsolutePath() + "/emp.tsv");
+//        log.info("Query script loaded.");
+//
+//
+//        AdpDBClientQueryStatus queryResult = dbClient.query("", queryScript);
+//        if (queryResult.hasError()) {
+//            log.error("Error occured : " + queryResult.getError());
+//        }
+//        log.info("Query successfully executed.");
 
-
-        AdpDBClientQueryStatus queryResult = dbClient.query("", queryScript);
-        if (queryResult.hasError()) {
-            log.error("Error occured : " + queryResult.getError());
-        }
-        log.info("Query successfully executed.");
-
+        String tableName = "query_lessons1";
         log.info(FileUtil.consume(dbClient.readTable(tableName)));
         cluster.stop(true);
         log.info("Cluster stopped.");

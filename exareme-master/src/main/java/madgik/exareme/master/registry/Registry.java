@@ -12,6 +12,7 @@ import madgik.exareme.common.schema.Table;
 import madgik.exareme.master.client.AdpDBClientProperties;
 import madgik.exareme.master.engine.remoteQuery.impl.utility.*;
 import madgik.exareme.master.engine.remoteQuery.impl.utility.Date;
+import madgik.exareme.utils.association.Triple;
 import madgik.exareme.utils.properties.AdpDBProperties;
 import org.apache.log4j.Logger;
 
@@ -410,6 +411,51 @@ public class Registry {
         }
 
         return tableName;
+    }
+
+    public Triple<String, String, Integer> containsHashIDInfo(int hashID){
+        try (Statement statement = regConn.createStatement()) {
+            ResultSet rs = statement.executeQuery(
+                    "SELECT sql.table_name, partition_column, COUNT(*) FROM sql, partition WHERE " +
+                            "hashID="+hashID+" AND partition.table_name=sql.table_name " +
+                            "GROUP BY sql.table_name, partition_column;");
+
+            if (rs.next())
+                return new Triple<String,String, Integer>(rs.getString(1), rs.getString(2), rs.getInt(3));
+
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+        }
+        return null;
+
+    }
+
+    public Triple<String, String, Integer> containsHashIDInfo(int hashID, long validDuration){
+        try (Statement statement = regConn.createStatement()) {
+            ResultSet rs = statement.executeQuery(
+                    "SELECT sql.table_name, partition_column, COUNT(*), storage_time FROM sql, partition WHERE " +
+                            "hashID="+hashID+" AND partition.table_name=sql.table_name " +
+                            "GROUP BY sql.table_name, partition_column;");
+
+            if (rs.next()) {
+                Triple<String, String, Integer> info = new Triple<String, String, Integer>(rs.getString(1), rs.getString(2), rs.getInt(3));
+
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                java.util.Date currentTime = format.parse(madgik.exareme.master.engine.remoteQuery.impl.utility.Date.getCurrentDateTime());
+                java.util.Date storageTime = format.parse(rs.getString(4));
+                long diffInSeconds = (currentTime.getTime() - storageTime.getTime()) / 1000;
+                if (diffInSeconds <= validDuration) {
+                    return info;
+                }
+            }
+
+        } catch (SQLException ex) {
+            log.error(ex.getMessage(), ex);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
+
     }
 
     public String containsHashID(int hashID, long validDuration) throws ParseException {

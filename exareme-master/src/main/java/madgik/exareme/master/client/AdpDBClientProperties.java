@@ -27,7 +27,7 @@ public class AdpDBClientProperties implements Serializable {
     private int maxNumberOfContainers;
     private int statisticsUpdateSEC;
 
-    private boolean cache = false;
+    private boolean cache = true;
 
     private SLA sla;
 
